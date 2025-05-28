@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:wtms/profilescreen.dart';  // 导入 ProfileScreen 页面
-import 'package:wtms/model/worker.dart'; // 假设你有 Worker 类来存储用户数据
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wtms/model/worker.dart';
+import 'package:wtms/task_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,10 +22,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCredentials(); // 加载存储的凭据
+    _loadCredentials();
   }
 
-  // 加载存储的凭据
   Future<void> _loadCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString('email');
@@ -41,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // 登录处理函数
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
 
@@ -63,63 +61,46 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http
           .post(
-            Uri.parse("http://192.168.68.109/wtms/login_worker.php"),
-            body: {
-              "email": email,
-              "password": password,
-            },
+            Uri.parse("http://10.133.132.76/wtms/login_worker.php"),
+            body: {"email": email, "password": password},
           )
           .timeout(const Duration(seconds: 15));
 
-      debugPrint("Login Response: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
-        try {
-          final jsonData = json.decode(response.body);
+        final jsonData = json.decode(response.body);
 
-          if (jsonData['status'] == 'success') {
-            if (_rememberMe) {
-              await _storeCredentials(email, password);
-            } else {
-              await _clearCredentials();
-            }
-
-            // 获取 worker 数据
-            final workerData = jsonData['worker']; // 从 json 中取出 worker 数据
-            if (workerData != null) {
-              final worker = Worker.fromJson(workerData); // 使用 Worker 类来解析数据
-              // 登录成功后跳转到 ProfileScreen，并传递 worker 数据
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProfileScreen(worker: worker),
-                ),
-              );
-            } else {
-              _showErrorDialog("Invalid user data received");
-            }
+        if (jsonData['status'] == 'success') {
+          if (_rememberMe) {
+            await _storeCredentials(email, password);
           } else {
-            _showErrorDialog(jsonData['message'] ?? "Login failed");
+            await _clearCredentials();
           }
-        } on FormatException catch (e) {
-          debugPrint("JSON Decode Error: $e");
-          _showErrorDialog("Invalid server response format");
-        } catch (e) {
-          debugPrint("Error: $e");
-          _showErrorDialog("An error occurred while processing your request");
+
+          final workerData = jsonData['worker'];
+          if (workerData != null) {
+            final worker = Worker.fromJson(workerData);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskListScreen(
+                  workerId: worker.id,
+                  workerName: worker.full_name,
+                  name: '',
+                ),
+              ),
+            );
+          } else {
+            _showErrorDialog("Invalid user data received");
+          }
+        } else {
+          _showErrorDialog(jsonData['message'] ?? "Login failed");
         }
       } else {
-        _showErrorDialog(
-            "Server error (HTTP ${response.statusCode})\nPlease try again later");
+        _showErrorDialog("Server error (HTTP ${response.statusCode})");
       }
-    } on http.ClientException catch (e) {
-      debugPrint("Network Error: $e");
-      _showErrorDialog("Network error. Please check your connection");
     } on TimeoutException {
       _showErrorDialog("Connection timeout. Please try again");
     } catch (e) {
-      debugPrint("Unexpected Error: $e");
       _showErrorDialog("An unexpected error occurred");
     } finally {
       if (mounted) {
@@ -128,7 +109,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // 存储凭据
   Future<void> _storeCredentials(String email, String password) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('email', email);
@@ -136,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setBool('rememberMe', true);
   }
 
-  // 清除凭据
   Future<void> _clearCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('email');
@@ -144,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setBool('rememberMe', false);
   }
 
-  // 显示错误对话框
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -152,26 +130,20 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text("Error"),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"))
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
   }
 
-  // 忘记密码对话框
   void _showForgotPasswordDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Forgot Password"),
-        content: const Text(
-            "Please contact your administrator to reset your password."),
+        content: const Text("Please contact your administrator to reset your password."),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"))
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
@@ -180,62 +152,88 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Login Screen"),
-        backgroundColor: Colors.amber.shade900,
-      ),
-      body: Center(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFF7B1FA2)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.all(16.0),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                      ),
-                      keyboardType: TextInputType.emailAddress,
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 10,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Welcome Back",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: "Email",
+                      prefixIcon: Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(),
                     ),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: "Password",
-                      ),
-                      obscureText: true,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: "Password",
+                      prefixIcon: Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(),
                     ),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
+                    obscureText: true,
+                  ),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
+                      ),
+                      const Text("Remember me"),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: const Text("Forgot Password?"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _handleLogin,
+                      icon: const Icon(Icons.login),
+                      label: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Login"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(fontSize: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const Text("Remember me"),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: 400,
-                      child: ElevatedButton(
-                        onPressed: _handleLogin,
-                        child: _isLoading
-                            ? const CircularProgressIndicator()
-                            : const Text("Login"),
                       ),
                     ),
-                    TextButton(
-                      onPressed: _showForgotPasswordDialog,
-                      child: const Text("Forgot Password?"),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

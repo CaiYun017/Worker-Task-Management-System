@@ -36,7 +36,7 @@ class Worker {
     return data;
   }*/
   
-  int id;  // 修改为 int
+  int id;  
   String full_name;
   String email;
   String password;
@@ -52,10 +52,10 @@ class Worker {
     required this.address,
   });
 
-  // 将 JSON 数据转化为 Worker 对象
+
   factory Worker.fromJson(Map<String, dynamic> json) {
     return Worker(
-      id: json['id'],  // 这里 id 是 int 类型
+      id: json['id'], 
       full_name: json['full_name'],
       email: json['email'],
       password: json['password'],

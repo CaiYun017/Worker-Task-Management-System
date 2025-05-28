@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
-import 'package:wtms/myconfig.dart';
-import 'package:wtms/loginscreen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'loginscreen.dart'; 
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,152 +14,134 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  TextEditingController nameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
-  TextEditingController phoneController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+
   File? _image;
   Uint8List? webImageBytes;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Register Screen"),
-          backgroundColor: Colors.amber.shade900,
-        ),
-        body: Center(
-            child: SingleChildScrollView(
+      backgroundColor: const Color(0xFFF5F6F8),
+      body: Center(
+        child: SingleChildScrollView(
           child: Container(
-            margin: const EdgeInsets.all(16.0),
+            margin: const EdgeInsets.all(24.0),
             child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 8,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        showSelectionDialog();
-                      },
-                      child: Container(
-                        height: 200,
-                        width: 400,
-                        decoration: BoxDecoration(
-                            image: DecorationImage(
-                          image: _image == null
-                              ? const AssetImage("assets/images/camera.png")
-                              : _buildProfileImage(),
-                          fit: BoxFit.cover,
+                    const Text("Create Account",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         )),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: showSelectionDialog,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: _image == null
+                            ? const AssetImage("assets/images/camera.png")
+                            : _buildProfileImage(),
+                        backgroundColor: Colors.grey.shade200,
                       ),
                     ),
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Your Name",
-                      ),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    TextField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: "Password",
-                      ),
-                      obscureText: true,
-                    ),
-                    TextField(
-                      controller: confirmPasswordController,
-                      decoration: const InputDecoration(
-                        labelText: "Password",
-                      ),
-                      obscureText: true,
-                    ),
-                    TextField(
-                      controller: phoneController,
-                      decoration: const InputDecoration(
-                        labelText: "Phone",
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    TextField(
-                      controller: addressController,
-                      decoration: const InputDecoration(
-                        labelText: "Address",
-                      ),
-                      keyboardType: TextInputType.text,
-                      maxLines: 5,
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(nameController, "Full Name", Icons.person),
+                    _buildTextField(emailController, "Email", Icons.email, inputType: TextInputType.emailAddress),
+                    _buildTextField(passwordController, "Password", Icons.lock, isObscure: true),
+                    _buildTextField(confirmPasswordController, "Confirm Password", Icons.lock_outline, isObscure: true),
+                    _buildTextField(phoneController, "Phone Number", Icons.phone, inputType: TextInputType.phone),
+                    _buildTextField(addressController, "Address", Icons.location_on, maxLines: 3),
+                    const SizedBox(height: 20),
                     SizedBox(
-                        width: 400,
-                        child: ElevatedButton(
-                          onPressed: registerUserDialog,
-                          child: const Text("Register"),
-                        ))
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: registerUserDialog,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text("Register", style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()));
+                      },
+                      child: const Text("Already have an account? Login"),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-        )));
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon,
+      {bool isObscure = false, TextInputType inputType = TextInputType.text, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        obscureText: isObscure,
+        keyboardType: inputType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
+      ),
+    );
   }
 
   void registerUserDialog() {
-    String full_name = nameController.text;
-    String email = emailController.text;
-    String password = passwordController.text;
-    String confirmPassword = confirmPasswordController.text;
-    String phone = phoneController.text;
-    String address = addressController.text;
-
-    if (full_name.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty ||
-        phone.isEmpty ||
-        address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Please fill all fields"),
-      ));
+    if ([nameController, emailController, passwordController, confirmPasswordController, phoneController, addressController]
+        .any((c) => c.text.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
       return;
     }
 
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Passwords do not match"),
-      ));
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       return;
     }
 
     showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (context) {
           return AlertDialog(
-            title: const Text("Register this account?"),
-            content: const Text("Are you sure?"),
+            title: const Text("Register Account"),
+            content: const Text("Are you sure you want to register?"),
             actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
               TextButton(
-                child: const Text("Ok"),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.pop(context);
                   registerUser();
                 },
-              ),
-              TextButton(
-                child: const Text("Cancel"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                child: const Text("Confirm"),
               ),
             ],
           );
@@ -169,37 +149,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void registerUser() {
-    String full_name = nameController.text;
-    String email = emailController.text;
-    String password = passwordController.text;
-    String phone = phoneController.text;
-    String address = addressController.text;
-
-    http.post(Uri.parse("http://192.168.68.109/wtms/register_worker.php"),
-        body: {
-          "full_name": full_name,
-          "email": email,
-          "password": password,
-          "phone": phone,
-          "address": address,
-        }).then((response) {
-      print(response.body);
-      if (response.statusCode == 200) {
-        var jsondata = json.decode(response.body);
-        if (jsondata['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Success!"),
-          ));
-          Navigator.of(context).pop();
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Failed to register"),
-          ));
-        }
+    http.post(
+      Uri.parse("http://10.133.132.76/wtms/register_worker.php"),
+      body: {
+        "full_name": nameController.text,
+        "email": emailController.text,
+        "password": passwordController.text,
+        "phone": phoneController.text,
+        "address": addressController.text,
+      },
+    ).then((response) {
+      var jsondata = json.decode(response.body);
+      if (jsondata['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Registration successful")));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to register")));
       }
     });
   }
@@ -207,32 +172,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void showSelectionDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        // return object of type Dialog
-        return AlertDialog(
-            title: const Text(
-              "Select from",
-              style: TextStyle(),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _selectFromCamera();
-                    },
-                    child: const Text("From Camera")),
-                TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _selectfromGallery();
-                    },
-                    child: const Text("From Gallery"))
-              ],
-            ));
-      },
+      builder: (context) => AlertDialog(
+        title: const Text("Select Profile Image"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton(onPressed: _selectFromCamera, child: const Text("Camera")),
+            TextButton(onPressed: _selectfromGallery, child: const Text("Gallery")),
+          ],
+        ),
+      ),
     );
   }
 
@@ -247,23 +196,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (pickedFile != null) {
       _image = File(pickedFile.path);
       if (kIsWeb) {
-        // Read image bytes for web.
         webImageBytes = await pickedFile.readAsBytes();
       }
       setState(() {});
-    } else {
-      print('No image selected.');
     }
   }
 
   Future<void> _selectfromGallery() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxHeight: 800,
-      maxWidth: 800,
-    );
-
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxHeight: 800, maxWidth: 800);
     if (pickedFile != null) {
       _image = File(pickedFile.path);
       setState(() {});
@@ -272,16 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   ImageProvider _buildProfileImage() {
     if (_image != null) {
-      if (kIsWeb) {
-        // For web, use MemoryImage.
-        return MemoryImage(webImageBytes!);
-      } else {
-        // For mobile, convert XFile to File.
-        return FileImage(File(_image!.path));
-      }
+      return kIsWeb ? MemoryImage(webImageBytes!) : FileImage(File(_image!.path)) as ImageProvider;
     }
-    return const AssetImage('assets/images/profile.png');
+    return const AssetImage("assets/images/camera.png");
   }
 }
-
-//http://192.168.68.109/wtms/register_worker.php
