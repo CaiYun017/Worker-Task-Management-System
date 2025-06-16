@@ -1,75 +1,115 @@
-# Worker Task Management System (WTMS) - Task Submission Extension
+# 🛠️ Worker Task Management System (WTMS)
 
-## 📌 Objective
-This project extends the existing Worker Task Management System (WTMS) by enabling logged-in workers to:
-- View their assigned tasks
-- Submit work completion reports
-
-## 🛠️ Functional Requirements
-
-### 1. Task List for Workers
-- After login, the worker retrieves a list of assigned tasks from the `tbl_works` database.
-- Each task displays:
-  - Task ID
-  - Title
-  - Description
-  - Date Assigned
-  - Due Date
-  - Status (Pending, In Progress, Completed)
-
-### 2. Work Completion Upload
-- Workers can select a task and submit a work completion description.
-- Submissions are stored in a new table: `tbl_submissions`.
+A mobile app built using **Flutter**, **PHP**, and **MySQL**, designed for task management between employers and workers. Workers can register, log in, view assigned tasks, submit work, and update their profiles.
 
 ---
 
-## 📱 Flutter App Features
+## 📱 Features
 
-### ✅ Task List Screen
-- Automatically loads tasks assigned to the currently logged-in worker.
-- Displays:
-  - Task title
-  - Description
-  - Due date
-  - Status with color/icon indicators
-- Includes `Logout` button for session termination.
-
-### ✅ Submit Completion Screen
-- Accessed by selecting a task with “Pending” status.
-- Features:
-  - Read-only Task Title
-  - Input field: *“What did you complete?”*
-  - Submit button to send data to backend
-  - Success/failure feedback
+- ✅ Worker registration and login
+- ✅ View assigned tasks with status indicators (Pending, In Progress, Completed)
+- ✅ Submit work with remarks
+- ✅ Edit previously submitted work
+- ✅ Update worker profile (except worker ID)
+- ✅ Auto login using SharedPreferences
+- ✅ Logout functionality
 
 ---
 
-## 🧑‍💻 Technologies Used
+## 💻 Tech Stack
 
-| Component   | Stack               |
-|------------|---------------------|
-| Frontend   | Flutter (Dart)      |
-| Backend    | PHP (XAMPP)         |
-| Database   | MySQL               |
-| API Comm   | HTTP POST Requests  |
+| Layer      | Technology         |
+|------------|--------------------|
+| Frontend   | Flutter             |
+| Backend    | PHP (REST API)      |
+| Database   | MySQL (phpMyAdmin)  |
+| Server     | XAMPP (localhost)   |
 
 ---
 
-## 📂 Folder Structure
+## 📁 Project Structure
+/wtms
+├── lib/
+│ ├── model/ # Submission and Worker models
+│ ├── screens/ # Flutter UI screens
+│ ├── mainscreen.dart
+│ └── myconfig.dart # Config for API base URL
+├── php/ # PHP backend files
+│ ├── register_worker.php
+│ ├── login_worker.php
+│ ├── get_works.php
+│ ├── submit_work.php
+│ ├── get_submissions.php
+│ ├── edit_submissions.php
+│ └── update_profile.php
+├── assets/ # Images and icons
+└── README.md
+
+## ⚙️ Setup Guide
+
+### 1. Flutter App Setup
 
 ```bash
-lib/
-├── main.dart
-├── login_screen.dart
-├── register_screen.dart
-├── task_list_screen.dart
-├── submit_work_screen.dart
-php/
-├── login.php
-├── register.php
-├── get_works.php
-├── submit_work.php
-database/
-├── tbl_workers.sql
-├── tbl_works.sql
-├── tbl_submissions.sql
+git clone https://github.com/caiyun017/wtms.git
+cd wtms
+flutter pub get
+flutter run
+
+Update your API base URL in myconfig.dart:
+
+dart
+Copy
+Edit
+class MyConfig {
+static const String myurl = "http://192.168.68.106/wtms/"; 
+}
+Make sure your device/emulator and your computer are connected to the same network.
+
+✅ PHP & MySQL Setup (Using XAMPP)
+Install XAMPP
+Start Apache & MySQL
+Import the wtms.sql file to phpMyAdmin
+Copy all PHP files into:
+makefile
+Copy
+Edit
+C:\xampp\htdocs\wtms\
+🗃️ Database Structure
+Table: workers
+Field	Type
+worker_id	INT (PK)
+full_name	VARCHAR
+email	VARCHAR
+password	VARCHAR
+phone	VARCHAR
+address	TEXT
+image_url	TEXT
+
+Table: tbl_works
+Field	Type
+id	INT (PK)
+worker_id	INT (FK)
+title	VARCHAR
+description	TEXT
+date_assigned	DATE
+due_date	DATE
+status	VARCHAR
+
+Table: tbl_submissions
+Field	Type
+id	INT (PK)
+work_id	INT (FK)
+remarks	TEXT
+submitted_on	DATETIME
+
+👩‍💻 Author
+Name: [TAN CAI YUN 297991]
+
+University: Universiti Utara Malaysia (UUM)
+
+Program: Bachelor of Information Technology (Software Engineering)
+
+Email: tancaiyun123@gmail.com
+
+📄 License
+This project is created for educational purposes. You are welcome to fork, use, and adapt it for your own learning.

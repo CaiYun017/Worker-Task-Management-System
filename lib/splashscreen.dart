@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> loadUserCredentials() async {
-    await Future.delayed(const Duration(seconds: 2)); // 添加延迟
+    await Future.delayed(const Duration(seconds: 2)); 
     print("HELLOOO");
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String email = (prefs.getString('email')) ?? '';
@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
     print("PASSWORD: $password");
     print("ISCHECKED: $rem");
     if (rem == true) {
-      http.post(Uri.parse("http://10.133.132.76/wtms/login_worker.php"), body: {
+      http.post(Uri.parse("http://192.168.68.106/wtms/login_worker.php"), body: {
         "email": email,
         "password": password,
       }).then((response) {

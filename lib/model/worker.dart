@@ -54,14 +54,13 @@ class Worker {
 
 
   factory Worker.fromJson(Map<String, dynamic> json) {
-    return Worker(
-      id: json['id'], 
-      full_name: json['full_name'],
-      email: json['email'],
-      password: json['password'],
-      phone: json['phone'],
-      address: json['address'],
-    );
-  }
-
+  return Worker(
+    id: int.parse(json['id'].toString()),
+    full_name: json['full_name'],
+    email: json['email'],
+    phone: json['phone'],
+    address: json['address'],
+    password: json['password'],
+  );
+}
 }

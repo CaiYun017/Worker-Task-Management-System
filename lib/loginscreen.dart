@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wtms/homescreen.dart';
 import 'package:wtms/model/worker.dart';
-import 'package:wtms/task_list_screen.dart';
+//import 'package:wtms/task_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,13 +62,14 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http
           .post(
-            Uri.parse("http://10.133.132.76/wtms/login_worker.php"),
+            Uri.parse("http://192.168.68.106/wtms/login_worker.php"),
             body: {"email": email, "password": password},
           )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
+        
 
         if (jsonData['status'] == 'success') {
           if (_rememberMe) {
@@ -79,13 +81,17 @@ class _LoginScreenState extends State<LoginScreen> {
           final workerData = jsonData['worker'];
           if (workerData != null) {
             final worker = Worker.fromJson(workerData);
+
+// ✅ 打印 ID 以 debug 检查值是否成功传递
+  print("🚀 Logging in with worker ID: ${worker.id}");
+
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => TaskListScreen(
+                builder: (context) => HomeScreen(
                   workerId: worker.id,
                   workerName: worker.full_name,
-                  name: '',
+                  //name: '',
                 ),
               ),
             );

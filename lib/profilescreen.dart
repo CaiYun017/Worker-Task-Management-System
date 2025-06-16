@@ -1,176 +1,189 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:wtms/model/worker.dart';
-import 'package:wtms/mainscreen.dart'; 
+import 'package:http/http.dart' as http;
 
-class ProfileScreen extends StatelessWidget {
-  final Worker worker;
+class ProfileScreen extends StatefulWidget {
+  final int workerId;
 
-  const ProfileScreen({super.key, required this.worker});
+  const ProfileScreen({super.key, required this.workerId});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        backgroundColor: Colors.amber.shade900,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar
-            Center(
-              child: CircleAvatar(
-                radius: 60,
-                backgroundImage: NetworkImage(
-                  "https://www.example.com/path/to/avatar.jpg",
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            Center(
-              child: Text(
-                worker.full_name,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
-                ),
-              ),
-            ),
-            const SizedBox(height: 5),
-            Center(
-              child: Text(
-                worker.email,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            const SizedBox(height: 25),
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-            // Info Card
-            Card(
-              elevation: 10,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: Colors.white,
-              shadowColor: Colors.black26,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildProfileInfoRow("Worker ID", worker.id.toString()),
-                    _buildProfileInfoRow("Phone Number", worker.phone),
-                    _buildProfileInfoRow("Address", worker.address),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 25),
+class _ProfileScreenState extends State<ProfileScreen> {
+  final TextEditingController _workerIdController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
-            // Logout Button with Confirmation Dialog
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text("Confirm Logout"),
-                        content:
-                            const Text("Are you sure you want to logout?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); // 关闭弹窗
-                            },
-                            child: const Text("Cancel"),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); // 关闭弹窗
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MainScreen(
-                                    worker: Worker(
-                                      id: 0,
-                                      full_name: "Guest",
-                                      email: "",
-                                      phone: "",
-                                      address: "", 
-                                      password: '',
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              "Logout",
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 5,
-                ),
-                child: const Text(
-                  "Logout",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkerProfile();
+  }
+
+  void _loadWorkerProfile() async {
+    final url = Uri.parse("http://192.168.68.106/wtms/get_profile.php");
+    final response = await http.post(url, body: {
+      'worker_id': widget.workerId.toString(),
+    });
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status'] == 'success') {
+        final worker = data['data'];
+        setState(() {
+          _workerIdController.text = worker['id'];
+          _fullNameController.text = worker['full_name'];
+          _emailController.text = worker['email'];
+          _phoneController.text = worker['phone'];
+          _addressController.text = worker['address'];
+        });
+      } else {
+        print("Load failed: ${data['message']}");
+      }
+    } else {
+      print("Server error: ${response.statusCode}");
+    }
+  }
+
+  void _updateProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final url = Uri.parse("http://192.168.68.106/wtms/update_profile.php");
+    final response = await http.post(url, body: {
+      'id': widget.workerId.toString(),
+      'email': _emailController.text,
+      'phone': _phoneController.text,
+      'address': _addressController.text,
+    });
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    final data = json.decode(response.body);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(data['message'])),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    IconData? icon,
+    bool enabled = true,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon != null ? Icon(icon) : null,
+          filled: true,
+          fillColor: enabled ? Colors.white : Colors.grey[200],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-        ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text("My Profile"),
+        centerTitle: true,
+        backgroundColor: Colors.indigo.shade600,
+        foregroundColor: Colors.white,
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "Profile Information",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Divider(),
+                      _buildTextField(
+                        controller: _workerIdController,
+                        label: 'Worker ID',
+                        icon: Icons.badge,
+                        enabled: false,
+                      ),
+                      _buildTextField(
+                        controller: _fullNameController,
+                        label: 'Full Name',
+                        icon: Icons.person,
+                        enabled: false,
+                      ),
+                      _buildTextField(
+                        controller: _emailController,
+                        label: 'Email',
+                        icon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      _buildTextField(
+                        controller: _phoneController,
+                        label: 'Phone Number',
+                        icon: Icons.phone,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      _buildTextField(
+                        controller: _addressController,
+                        label: 'Address',
+                        icon: Icons.home,
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.save),
+                          label: const Text('Save Changes'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: _updateProfile,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }

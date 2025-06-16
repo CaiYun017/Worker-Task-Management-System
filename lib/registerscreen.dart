@@ -150,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void registerUser() {
     http.post(
-      Uri.parse("http://10.133.132.76/wtms/register_worker.php"),
+      Uri.parse("http://192.168.68.106/wtms/register_worker.php"),
       body: {
         "full_name": nameController.text,
         "email": emailController.text,
